@@ -5,13 +5,13 @@ Aggregates individual packets into bidirectional network flows.
 Computes per-flow statistics used by anomaly detectors.
 """
 
-import time
-import threading
 import logging
-from collections import defaultdict
+import threading
+import time
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple
-from .packet_capture import PacketRecord, Protocol
+
+from .packet_capture import PacketRecord
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +21,7 @@ FlowKey = Tuple[str, str, int, int, str]  # (src_ip, dst_ip, src_port, dst_port,
 @dataclass
 class FlowRecord:
     """Bidirectional network flow with statistical features."""
+
     key: FlowKey
     src_ip: str
     dst_ip: str
@@ -113,15 +114,17 @@ class FlowRecord:
 
     def to_dict(self) -> Dict:
         d = self.to_feature_vector()
-        d.update({
-            "src_ip": self.src_ip,
-            "dst_ip": self.dst_ip,
-            "src_port": self.src_port,
-            "dst_port": self.dst_port,
-            "protocol": self.protocol,
-            "start_time": self.start_time,
-            "last_seen": self.last_seen,
-        })
+        d.update(
+            {
+                "src_ip": self.src_ip,
+                "dst_ip": self.dst_ip,
+                "src_port": self.src_port,
+                "dst_port": self.dst_port,
+                "protocol": self.protocol,
+                "start_time": self.start_time,
+                "last_seen": self.last_seen,
+            }
+        )
         return d
 
 
@@ -137,7 +140,7 @@ class FlowTracker:
 
     def __init__(
         self,
-        flow_timeout: float = 120.0,     # seconds of inactivity before eviction
+        flow_timeout: float = 120.0,  # seconds of inactivity before eviction
         max_flows: int = 100_000,
         eviction_interval: float = 30.0,
     ):
@@ -149,9 +152,7 @@ class FlowTracker:
         self._lock = threading.RLock()
         self._completed_flows: List[FlowRecord] = []
 
-        self._eviction_thread = threading.Thread(
-            target=self._eviction_loop, name="flow-eviction", daemon=True
-        )
+        self._eviction_thread = threading.Thread(target=self._eviction_loop, name="flow-eviction", daemon=True)
         self._eviction_thread.start()
 
     def update(self, pkt: PacketRecord) -> Optional[FlowRecord]:
@@ -172,17 +173,20 @@ class FlowTracker:
             is_forward = key in self._flows or rev_key not in self._flows
 
             if is_forward:
-                flow = self._flows.setdefault(key, FlowRecord(
-                    key=key,
-                    src_ip=pkt.src_ip,
-                    dst_ip=pkt.dst_ip,
-                    src_port=pkt.src_port,
-                    dst_port=pkt.dst_port,
-                    protocol=pkt.protocol.value,
-                    start_time=pkt.timestamp,
-                    last_seen=pkt.timestamp,
-                    _last_fwd_ts=pkt.timestamp,
-                ))
+                flow = self._flows.setdefault(
+                    key,
+                    FlowRecord(
+                        key=key,
+                        src_ip=pkt.src_ip,
+                        dst_ip=pkt.dst_ip,
+                        src_port=pkt.src_port,
+                        dst_port=pkt.dst_port,
+                        protocol=pkt.protocol.value,
+                        start_time=pkt.timestamp,
+                        last_seen=pkt.timestamp,
+                        _last_fwd_ts=pkt.timestamp,
+                    ),
+                )
                 flow.fwd_packets += 1
                 flow.fwd_bytes += pkt.length
                 flow.fwd_payload += pkt.payload_size
@@ -237,10 +241,7 @@ class FlowTracker:
             time.sleep(self.eviction_interval)
             now = time.time()
             with self._lock:
-                expired = [
-                    key for key, flow in self._flows.items()
-                    if now - flow.last_seen > self.flow_timeout
-                ]
+                expired = [key for key, flow in self._flows.items() if now - flow.last_seen > self.flow_timeout]
                 for key in expired:
                     self._completed_flows.append(self._flows.pop(key))
             if expired:

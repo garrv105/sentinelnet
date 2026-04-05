@@ -25,13 +25,16 @@ jobs:
           cache: pip
 
       - name: Install lint tools
-        run: pip install ruff black mypy
+        run: pip install ruff black isort
 
       - name: Ruff lint
-        run: ruff check sentinelnet/ tests/ --select E,F,W,I --ignore E501
+        run: ruff check sentinelnet/ tests/ scripts/
 
       - name: Black format check
-        run: black --check sentinelnet/ tests/
+        run: black --check --line-length 120 sentinelnet/ tests/ scripts/
+
+      - name: isort check
+        run: isort --check-only sentinelnet/ tests/ scripts/
 
   # ─────────────────────────────────────────
   # 2. Unit Tests

@@ -22,9 +22,8 @@ import hashlib
 import logging
 import os
 import secrets
-import time
 from datetime import datetime, timedelta, timezone
-from typing import List, Optional
+from typing import Optional
 
 from fastapi import Depends, Header, HTTPException, Security, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer, OAuth2PasswordRequestForm
@@ -46,9 +45,7 @@ JWT_ALGORITHM = "HS256"
 JWT_TTL_MINUTES: int = int(os.getenv("SENTINELNET_JWT_TTL_MIN", "60"))
 
 _raw_api_keys: str = os.getenv("SENTINELNET_API_KEYS", "")
-VALID_API_KEYS: set[str] = {
-    k.strip() for k in _raw_api_keys.split(",") if k.strip()
-}
+VALID_API_KEYS: set[str] = {k.strip() for k in _raw_api_keys.split(",") if k.strip()}
 
 ADMIN_USERNAME: str = os.getenv("SENTINELNET_ADMIN_USER", "admin")
 # Default password hash for "changeme" — MUST be overridden in production
@@ -58,6 +55,7 @@ ADMIN_PASS_HASH: str = os.getenv("SENTINELNET_ADMIN_PASS_HASH", _DEFAULT_HASH)
 # ---------------------------------------------------------------------------
 # Models
 # ---------------------------------------------------------------------------
+
 
 class TokenResponse(BaseModel):
     access_token: str
@@ -124,6 +122,7 @@ def decode_access_token(token: str) -> dict:
 # API Key helpers
 # ---------------------------------------------------------------------------
 
+
 def _constant_time_key_check(candidate: str) -> bool:
     """Timing-safe check against all valid API keys."""
     for valid_key in VALID_API_KEYS:
@@ -138,6 +137,7 @@ def _constant_time_key_check(candidate: str) -> bool:
 # ---------------------------------------------------------------------------
 # FastAPI dependency: get_current_user
 # ---------------------------------------------------------------------------
+
 
 async def get_current_user(
     credentials: Optional[HTTPAuthorizationCredentials] = Security(_bearer_scheme),
@@ -201,14 +201,13 @@ async def require_admin(user: CurrentUser = Depends(get_current_user)) -> Curren
 # /auth/token endpoint handler (called from server.py)
 # ---------------------------------------------------------------------------
 
+
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm) -> TokenResponse:
     """
     Validates username/password and returns a JWT access token.
     Plugged into POST /auth/token by server.py.
     """
-    if form_data.username != ADMIN_USERNAME or not verify_password(
-        form_data.password, ADMIN_PASS_HASH
-    ):
+    if form_data.username != ADMIN_USERNAME or not verify_password(form_data.password, ADMIN_PASS_HASH):
         # Use consistent timing to prevent user enumeration
         _pwd_ctx.dummy_verify()
         raise HTTPException(

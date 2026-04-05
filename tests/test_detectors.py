@@ -1,22 +1,31 @@
 """
 Tests: Rule-based detectors — port scan, SYN flood, brute force, DNS tunneling
 """
+
 import time
+
 import pytest
-from sentinelnet.core.packet_capture import PacketRecord, Protocol
+
 from sentinelnet.core.event_bus import EventBus, Severity
+from sentinelnet.core.packet_capture import PacketRecord, Protocol
 from sentinelnet.detectors.rule_engine import (
-    PortScanDetector, SynFloodDetector, BruteForceDetector,
-    DNSTunnelingDetector, RuleEngine,
+    BruteForceDetector,
+    DNSTunnelingDetector,
+    PortScanDetector,
+    RuleEngine,
+    SynFloodDetector,
 )
 
 
-def make_pkt(src="10.0.0.1", dst="192.168.1.1", sport=54321, dport=80,
-             proto=Protocol.TCP, flags=None, payload=0, ts=None) -> PacketRecord:
+def make_pkt(
+    src="10.0.0.1", dst="192.168.1.1", sport=54321, dport=80, proto=Protocol.TCP, flags=None, payload=0, ts=None
+) -> PacketRecord:
     return PacketRecord(
         timestamp=ts or time.time(),
-        src_ip=src, dst_ip=dst,
-        src_port=sport, dst_port=dport,
+        src_ip=src,
+        dst_ip=dst,
+        src_port=sport,
+        dst_port=dport,
         protocol=proto,
         length=64,
         flags=flags or {},
@@ -137,7 +146,8 @@ class TestBruteForceDetector:
         event = None
         for i in range(15):
             pkt = make_pkt(
-                dport=22, proto=Protocol.TCP,
+                dport=22,
+                proto=Protocol.TCP,
                 flags={"SYN": True, "ACK": False},
                 ts=base_ts + i * 1.0,
             )
@@ -151,7 +161,8 @@ class TestBruteForceDetector:
         event = None
         for i in range(15):
             pkt = make_pkt(
-                dport=3389, proto=Protocol.TCP,
+                dport=3389,
+                proto=Protocol.TCP,
                 flags={"SYN": True, "ACK": False},
                 ts=base_ts + i * 0.5,
             )
@@ -163,7 +174,8 @@ class TestBruteForceDetector:
         base_ts = time.time()
         for i in range(30):
             pkt = make_pkt(
-                dport=8080, proto=Protocol.TCP,
+                dport=8080,
+                proto=Protocol.TCP,
                 flags={"SYN": True},
                 ts=base_ts + i * 0.1,
             )
@@ -174,8 +186,7 @@ class TestBruteForceDetector:
         base_ts = time.time()
         event = None
         for i in range(15):
-            pkt = make_pkt(dport=22, proto=Protocol.TCP,
-                           flags={"SYN": True, "ACK": False}, ts=base_ts + i)
+            pkt = make_pkt(dport=22, proto=Protocol.TCP, flags={"SYN": True, "ACK": False}, ts=base_ts + i)
             event = self.detector.inspect(pkt)
         if event:
             assert event.mitre_technique == "T1110"
@@ -201,8 +212,10 @@ class TestDNSTunnelingDetector:
         event = None
         for i in range(50):
             pkt = make_pkt(
-                dport=53, proto=Protocol.DNS,
-                payload=200, ts=base_ts + i * 1.0,
+                dport=53,
+                proto=Protocol.DNS,
+                payload=200,
+                ts=base_ts + i * 1.0,
             )
             event = self.detector.inspect(pkt)
         assert event is not None
@@ -241,6 +254,7 @@ class TestRuleEngine:
             pkt = make_pkt(dst=f"192.168.1.{i}", ts=base_ts + i * 0.1)
             self.engine.inspect_packet(pkt)
         import time as t
+
         t.sleep(0.5)  # let bus dispatch
         scan_events = [e for e in self.events if "scan" in e.threat_type]
         # Should only get 1 despite many packets (dedup kicks in)

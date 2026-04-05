@@ -1,10 +1,13 @@
 """
 Tests: PacketCaptureEngine and PacketRecord
 """
+
 import queue
 import time
+
 import pytest
-from sentinelnet.core.packet_capture import PacketRecord, Protocol, PacketCaptureEngine
+
+from sentinelnet.core.packet_capture import PacketCaptureEngine, PacketRecord, Protocol
 
 
 def make_packet(**kwargs) -> PacketRecord:
@@ -28,8 +31,18 @@ class TestPacketRecord:
     def test_to_dict_contains_required_keys(self):
         pkt = make_packet()
         d = pkt.to_dict()
-        for key in ["timestamp", "src_ip", "dst_ip", "src_port", "dst_port",
-                    "protocol", "length", "flags", "payload_size", "ttl"]:
+        for key in [
+            "timestamp",
+            "src_ip",
+            "dst_ip",
+            "src_port",
+            "dst_port",
+            "protocol",
+            "length",
+            "flags",
+            "payload_size",
+            "ttl",
+        ]:
             assert key in d, f"Missing key: {key}"
 
     def test_protocol_value_serialization(self):

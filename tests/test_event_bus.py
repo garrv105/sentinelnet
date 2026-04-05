@@ -1,15 +1,18 @@
 """
 Tests: EventBus — pub/sub dispatch, priority ordering, dedup, shutdown
 """
-import time
+
 import threading
+import time
+
 import pytest
-from sentinelnet.core.event_bus import EventBus, ThreatEvent, Severity
+
+from sentinelnet.core.event_bus import EventBus, Severity, ThreatEvent
 
 
-def make_event(threat_type="port_scan", severity=Severity.HIGH,
-               src="1.2.3.4", dst="5.6.7.8", score=0.8) -> ThreatEvent:
+def make_event(threat_type="port_scan", severity=Severity.HIGH, src="1.2.3.4", dst="5.6.7.8", score=0.8) -> ThreatEvent:
     import uuid
+
     return ThreatEvent(
         event_id=str(uuid.uuid4()),
         source="test",
@@ -95,8 +98,7 @@ class TestEventBus:
     def test_event_to_dict_complete(self):
         event = make_event()
         d = event.to_dict()
-        required = ["event_id", "source", "severity", "threat_type",
-                    "src_ip", "dst_ip", "score", "timestamp"]
+        required = ["event_id", "source", "severity", "threat_type", "src_ip", "dst_ip", "score", "timestamp"]
         for k in required:
             assert k in d
 

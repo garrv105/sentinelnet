@@ -14,14 +14,13 @@ Features:
 Dependencies: scikit-learn, numpy
 """
 
-import uuid
-import time
 import logging
-import threading
 import pickle
+import threading
+import uuid
 from collections import deque
-from typing import Dict, List, Optional, Tuple
 from pathlib import Path
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 
@@ -33,11 +32,25 @@ class FlowProfiler:
     Maintains a rolling statistical profile (mean, std) for a source IP.
     Used for z-score based anomaly detection.
     """
+
     FEATURE_NAMES = [
-        "duration", "fwd_packets", "bwd_packets", "fwd_bytes", "bwd_bytes",
-        "bytes_per_sec", "packets_per_sec", "avg_fwd_iat", "avg_bwd_iat",
-        "syn_count", "fin_count", "rst_count", "psh_count",
-        "flag_ratio", "fwd_payload", "bwd_payload", "pkt_size_ratio",
+        "duration",
+        "fwd_packets",
+        "bwd_packets",
+        "fwd_bytes",
+        "bwd_bytes",
+        "bytes_per_sec",
+        "packets_per_sec",
+        "avg_fwd_iat",
+        "avg_bwd_iat",
+        "syn_count",
+        "fin_count",
+        "rst_count",
+        "psh_count",
+        "flag_ratio",
+        "fwd_payload",
+        "bwd_payload",
+        "pkt_size_ratio",
     ]
     N_FEATURES = len(FEATURE_NAMES)
 
@@ -102,7 +115,7 @@ class IsolationForestDetector:
         self,
         n_estimators: int = 100,
         contamination: float = 0.05,
-        retrain_interval: int = 1000,   # flows between retrains
+        retrain_interval: int = 1000,  # flows between retrains
         model_path: Optional[str] = None,
     ):
         self.n_estimators = n_estimators
@@ -122,6 +135,7 @@ class IsolationForestDetector:
 
     def _init_model(self):
         from sklearn.ensemble import IsolationForest
+
         self._model = IsolationForest(
             n_estimators=self.n_estimators,
             contamination=self.contamination,
@@ -179,8 +193,8 @@ class IsolationForestDetector:
 
     def _is_fitted(self) -> bool:
         try:
-            from sklearn.exceptions import NotFittedError
             from sklearn.utils.validation import check_is_fitted
+
             check_is_fitted(self._model)
             return True
         except Exception:
@@ -196,7 +210,8 @@ class AnomalyDetectionEngine:
     """
 
     def __init__(self, bus, anomaly_threshold: float = 0.75, model_path: Optional[str] = None):
-        from ..core.event_bus import EventBus, ThreatEvent, Severity
+        from ..core.event_bus import Severity, ThreatEvent
+
         self.bus = bus
         self.threshold = anomaly_threshold
         self.Severity = Severity
@@ -235,8 +250,7 @@ class AnomalyDetectionEngine:
 
         return combined
 
-    def _emit_anomaly(self, flow, score: float, top_features: List[str],
-                      zscore_score: float, iso_score: float):
+    def _emit_anomaly(self, flow, score: float, top_features: List[str], zscore_score: float, iso_score: float):
         event = self.ThreatEvent(
             event_id=str(uuid.uuid4()),
             source="AnomalyDetectionEngine",
@@ -266,7 +280,4 @@ class AnomalyDetectionEngine:
 
     def get_profiler_summary(self) -> List[Dict]:
         with self._profiler_lock:
-            return [
-                {"src_ip": ip, "samples": p.sample_count}
-                for ip, p in self._profilers.items()
-            ]
+            return [{"src_ip": ip, "samples": p.sample_count} for ip, p in self._profilers.items()]

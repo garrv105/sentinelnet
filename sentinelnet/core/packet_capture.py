@@ -6,12 +6,12 @@ Supports live interface capture and PCAP file replay.
 """
 
 import logging
-import threading
 import queue
+import threading
 import time
 from dataclasses import dataclass, field
-from typing import Optional, Callable, List, Dict, Any
 from enum import Enum
+from typing import Any, Callable, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +30,7 @@ class Protocol(Enum):
 @dataclass
 class PacketRecord:
     """Normalized packet representation for the detection pipeline."""
+
     timestamp: float
     src_ip: str
     dst_ip: str
@@ -111,7 +112,9 @@ class PacketCaptureEngine:
         self._running = True
         logger.info(
             "PacketCaptureEngine starting | interface=%s pcap=%s filter='%s'",
-            self.interface, self.pcap_file, self.bpf_filter,
+            self.interface,
+            self.pcap_file,
+            self.bpf_filter,
         )
 
         # Capture thread
@@ -224,7 +227,7 @@ class PacketCaptureEngine:
     def _parse_packet(self, pkt) -> Optional[PacketRecord]:
         """Convert a Scapy packet to a normalized PacketRecord."""
         try:
-            from scapy.all import IP, TCP, UDP, ICMP, ARP, DNS, Raw
+            from scapy.all import ARP, ICMP, IP, TCP, UDP, Raw
 
             ts = float(pkt.time) if hasattr(pkt, "time") else time.time()
             src_ip = dst_ip = "0.0.0.0"
@@ -244,8 +247,8 @@ class PacketCaptureEngine:
                 tcp = pkt[TCP]
                 src_port = tcp.sport
                 dst_port = tcp.dport
-                protocol = Protocol.HTTPS if dst_port == 443 else (
-                    Protocol.HTTP if dst_port in (80, 8080) else Protocol.TCP
+                protocol = (
+                    Protocol.HTTPS if dst_port == 443 else (Protocol.HTTP if dst_port in (80, 8080) else Protocol.TCP)
                 )
                 flags = {
                     "SYN": bool(tcp.flags & 0x02),

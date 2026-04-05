@@ -11,20 +11,19 @@ Pluggable response framework with:
 
 import json
 import logging
-import os
-import subprocess
 import sqlite3
+import subprocess
 import threading
 import time
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from datetime import datetime
-from typing import Dict, List, Optional, Set
 from pathlib import Path
+from typing import Dict, List, Optional, Set
 
 import requests
 
-from ..core.event_bus import ThreatEvent, Severity
+from ..core.event_bus import Severity, ThreatEvent
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +31,7 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 # Base responder interface
 # ---------------------------------------------------------------------------
+
 
 class BaseResponder(ABC):
     """Abstract base class for all response modules."""
@@ -51,6 +51,7 @@ class BaseResponder(ABC):
 # ---------------------------------------------------------------------------
 # Concrete responders
 # ---------------------------------------------------------------------------
+
 
 class IPBlocker(BaseResponder):
     """
@@ -103,10 +104,7 @@ class IPBlocker(BaseResponder):
     def get_blocklist(self) -> List[Dict]:
         with self._lock:
             now = time.time()
-            return [
-                {"ip": ip, "expires_in_secs": max(0, int(t - now))}
-                for ip, t in self._blocked.items()
-            ]
+            return [{"ip": ip, "expires_in_secs": max(0, int(t - now))} for ip, t in self._blocked.items()]
 
     def _apply_block(self, ip: str):
         if self.dry_run:
@@ -114,8 +112,7 @@ class IPBlocker(BaseResponder):
             return
         try:
             subprocess.run(
-                ["iptables", "-A", "INPUT", "-s", ip, "-j", "DROP"],
-                capture_output=True, check=True, timeout=5
+                ["iptables", "-A", "INPUT", "-s", ip, "-j", "DROP"], capture_output=True, check=True, timeout=5
             )
         except FileNotFoundError:
             logger.warning("iptables not available. IP %s NOT blocked in firewall.", ip)
@@ -126,10 +123,7 @@ class IPBlocker(BaseResponder):
         if self.dry_run:
             return
         try:
-            subprocess.run(
-                ["iptables", "-D", "INPUT", "-s", ip, "-j", "DROP"],
-                capture_output=True, timeout=5
-            )
+            subprocess.run(["iptables", "-D", "INPUT", "-s", ip, "-j", "DROP"], capture_output=True, timeout=5)
         except Exception:
             pass
 
@@ -222,25 +216,28 @@ class IncidentLogger(BaseResponder):
 
     def _write_db(self, event: ThreatEvent):
         with sqlite3.connect(self._db_path) as conn:
-            conn.execute("""
+            conn.execute(
+                """
                 INSERT OR IGNORE INTO incidents VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-            """, (
-                event.event_id,
-                event.timestamp,
-                event.source,
-                event.severity.label(),
-                event.threat_type,
-                event.src_ip,
-                event.dst_ip,
-                event.src_port,
-                event.dst_port,
-                event.protocol,
-                event.score,
-                event.description,
-                json.dumps(event.evidence),
-                event.mitre_tactic,
-                event.mitre_technique,
-            ))
+            """,
+                (
+                    event.event_id,
+                    event.timestamp,
+                    event.source,
+                    event.severity.label(),
+                    event.threat_type,
+                    event.src_ip,
+                    event.dst_ip,
+                    event.src_port,
+                    event.dst_port,
+                    event.protocol,
+                    event.score,
+                    event.description,
+                    json.dumps(event.evidence),
+                    event.mitre_tactic,
+                    event.mitre_technique,
+                ),
+            )
 
 
 class SlackAlerter(BaseResponder):
@@ -284,26 +281,29 @@ class SlackAlerter(BaseResponder):
         color = self.SEVERITY_COLORS.get(event.severity, "#888888")
         ts = datetime.utcfromtimestamp(event.timestamp).strftime("%Y-%m-%d %H:%M:%S UTC")
         return {
-            "attachments": [{
-                "color": color,
-                "title": f"[{event.severity.label()}] {event.threat_type.replace('_', ' ').title()}",
-                "text": event.description,
-                "fields": [
-                    {"title": "Source IP", "value": event.src_ip, "short": True},
-                    {"title": "Destination", "value": f"{event.dst_ip}:{event.dst_port}", "short": True},
-                    {"title": "Score", "value": f"{event.score:.3f}", "short": True},
-                    {"title": "Protocol", "value": event.protocol, "short": True},
-                    {"title": "MITRE", "value": f"{event.mitre_tactic} / {event.mitre_technique}", "short": True},
-                    {"title": "Event ID", "value": event.event_id[:8], "short": True},
-                ],
-                "footer": f"SentinelNet | {ts}",
-            }]
+            "attachments": [
+                {
+                    "color": color,
+                    "title": f"[{event.severity.label()}] {event.threat_type.replace('_', ' ').title()}",
+                    "text": event.description,
+                    "fields": [
+                        {"title": "Source IP", "value": event.src_ip, "short": True},
+                        {"title": "Destination", "value": f"{event.dst_ip}:{event.dst_port}", "short": True},
+                        {"title": "Score", "value": f"{event.score:.3f}", "short": True},
+                        {"title": "Protocol", "value": event.protocol, "short": True},
+                        {"title": "MITRE", "value": f"{event.mitre_tactic} / {event.mitre_technique}", "short": True},
+                        {"title": "Event ID", "value": event.event_id[:8], "short": True},
+                    ],
+                    "footer": f"SentinelNet | {ts}",
+                }
+            ]
         }
 
 
 # ---------------------------------------------------------------------------
 # Response Manager
 # ---------------------------------------------------------------------------
+
 
 class ResponseManager:
     """
@@ -321,18 +321,22 @@ class ResponseManager:
 
         # Optional IP blocker
         if config.get("enable_ip_blocker", False):
-            self._responders.append(IPBlocker(
-                whitelist=config.get("ip_whitelist", []),
-                block_duration_secs=config.get("block_duration_secs", 3600),
-                dry_run=config.get("dry_run", True),
-            ))
+            self._responders.append(
+                IPBlocker(
+                    whitelist=config.get("ip_whitelist", []),
+                    block_duration_secs=config.get("block_duration_secs", 3600),
+                    dry_run=config.get("dry_run", True),
+                )
+            )
 
         # Optional Slack alerter
         if config.get("slack_webhook"):
-            self._responders.append(SlackAlerter(
-                webhook_url=config["slack_webhook"],
-                rate_limit_secs=config.get("slack_rate_limit_secs", 60),
-            ))
+            self._responders.append(
+                SlackAlerter(
+                    webhook_url=config["slack_webhook"],
+                    rate_limit_secs=config.get("slack_rate_limit_secs", 60),
+                )
+            )
 
         # Subscribe to all events
         bus.subscribe("*", self._handle_event)

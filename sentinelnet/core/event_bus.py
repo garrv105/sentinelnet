@@ -6,12 +6,12 @@ Supports synchronous and async subscribers with priority ordering.
 """
 
 import logging
-import threading
 import queue
+import threading
 import time
 from dataclasses import dataclass, field
 from enum import IntEnum
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List
 
 logger = logging.getLogger(__name__)
 
@@ -30,21 +30,22 @@ class Severity(IntEnum):
 @dataclass
 class ThreatEvent:
     """Unified threat event emitted by any detector."""
+
     event_id: str
-    source: str                    # detector name
+    source: str  # detector name
     severity: Severity
-    threat_type: str               # e.g. "port_scan", "syn_flood", "dns_tunnel"
+    threat_type: str  # e.g. "port_scan", "syn_flood", "dns_tunnel"
     src_ip: str
     dst_ip: str
     src_port: int = 0
     dst_port: int = 0
     protocol: str = ""
-    score: float = 0.0             # confidence 0-1
+    score: float = 0.0  # confidence 0-1
     description: str = ""
     evidence: Dict[str, Any] = field(default_factory=dict)
     timestamp: float = field(default_factory=time.time)
-    mitre_tactic: str = ""        # MITRE ATT&CK tactic tag
-    mitre_technique: str = ""     # MITRE ATT&CK technique tag
+    mitre_tactic: str = ""  # MITRE ATT&CK tactic tag
+    mitre_technique: str = ""  # MITRE ATT&CK technique tag
 
     def to_dict(self) -> Dict[str, Any]:
         return {

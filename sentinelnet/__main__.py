@@ -6,8 +6,9 @@ Usage: python -m sentinelnet [options]
 import argparse
 import logging
 import sys
-import yaml
 from pathlib import Path
+
+import yaml
 
 from .core.engine import SentinelEngine
 

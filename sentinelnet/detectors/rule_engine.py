@@ -10,18 +10,17 @@ YAML-configurable rule engine supporting:
 - Custom user-defined rules with threshold and time-window logic
 """
 
-import uuid
-import time
 import logging
+import time
+import uuid
 from collections import defaultdict, deque
-from typing import Dict, List, Optional, Any
-from pathlib import Path
+from typing import Dict, Optional
 
 import yaml
 
-from ..core.packet_capture import PacketRecord, Protocol
+from ..core.event_bus import EventBus, Severity, ThreatEvent
 from ..core.flow_tracker import FlowRecord
-from ..core.event_bus import EventBus, ThreatEvent, Severity
+from ..core.packet_capture import PacketRecord, Protocol
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +28,7 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 # Built-in detection rules
 # ---------------------------------------------------------------------------
+
 
 class PortScanDetector:
     """
@@ -39,8 +39,8 @@ class PortScanDetector:
     def __init__(
         self,
         window_secs: float = 60.0,
-        horizontal_threshold: int = 20,   # distinct dst IPs in window
-        vertical_threshold: int = 15,     # distinct dst ports in window
+        horizontal_threshold: int = 20,  # distinct dst IPs in window
+        vertical_threshold: int = 15,  # distinct dst ports in window
     ):
         self.window = window_secs
         self.h_threshold = horizontal_threshold
@@ -78,8 +78,7 @@ class PortScanDetector:
 
         return None
 
-    def _make_event(self, threat_type: str, src: str, pkt: PacketRecord,
-                    count: int, scan_type: str) -> ThreatEvent:
+    def _make_event(self, threat_type: str, src: str, pkt: PacketRecord, count: int, scan_type: str) -> ThreatEvent:
         return ThreatEvent(
             event_id=str(uuid.uuid4()),
             source="PortScanDetector",
@@ -256,6 +255,7 @@ class BruteForceDetector:
 # ---------------------------------------------------------------------------
 # Rule Engine
 # ---------------------------------------------------------------------------
+
 
 class RuleEngine:
     """

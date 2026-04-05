@@ -1,19 +1,24 @@
 """
 Tests: FlowTracker — flow aggregation, IAT calculation, flag counting, eviction
 """
+
 import time
+
 import pytest
+
+from sentinelnet.core.flow_tracker import FlowRecord, FlowTracker
 from sentinelnet.core.packet_capture import PacketRecord, Protocol
-from sentinelnet.core.flow_tracker import FlowTracker, FlowRecord
 
 
-def make_pkt(src="1.2.3.4", dst="5.6.7.8", sport=1234, dport=80,
-             proto=Protocol.TCP, length=100, payload=50,
-             flags=None, ts=None) -> PacketRecord:
+def make_pkt(
+    src="1.2.3.4", dst="5.6.7.8", sport=1234, dport=80, proto=Protocol.TCP, length=100, payload=50, flags=None, ts=None
+) -> PacketRecord:
     return PacketRecord(
         timestamp=ts or time.time(),
-        src_ip=src, dst_ip=dst,
-        src_port=sport, dst_port=dport,
+        src_ip=src,
+        dst_ip=dst,
+        src_port=sport,
+        dst_port=dport,
         protocol=proto,
         length=length,
         flags=flags or {"SYN": False, "ACK": True},
@@ -51,8 +56,7 @@ class TestFlowTracker:
         assert flow.bwd_bytes == 100
 
     def test_syn_flag_counted(self):
-        pkt = make_pkt(flags={"SYN": True, "ACK": False, "FIN": False, "RST": False,
-                               "PSH": False, "URG": False})
+        pkt = make_pkt(flags={"SYN": True, "ACK": False, "FIN": False, "RST": False, "PSH": False, "URG": False})
         flow = self.tracker.update(pkt)
         assert flow.syn_count == 1
 
@@ -104,25 +108,33 @@ class TestFlowTracker:
 
 class TestFlowRecord:
     def test_flag_ratio_no_division_by_zero(self):
-        flow = FlowRecord(
-            key=("a", "b", 1, 2, "TCP"),
-            src_ip="a", dst_ip="b", src_port=1, dst_port=2, protocol="TCP"
-        )
+        flow = FlowRecord(key=("a", "b", 1, 2, "TCP"), src_ip="a", dst_ip="b", src_port=1, dst_port=2, protocol="TCP")
         assert flow.flag_ratio == 0.0  # syn=0, ack=0 → 0/1 = 0
 
     def test_bytes_per_second(self):
         flow = FlowRecord(
             key=("a", "b", 1, 2, "TCP"),
-            src_ip="a", dst_ip="b", src_port=1, dst_port=2, protocol="TCP",
-            start_time=0.0, last_seen=1.0,
-            fwd_bytes=1000, bwd_bytes=500,
+            src_ip="a",
+            dst_ip="b",
+            src_port=1,
+            dst_port=2,
+            protocol="TCP",
+            start_time=0.0,
+            last_seen=1.0,
+            fwd_bytes=1000,
+            bwd_bytes=500,
         )
         assert flow.bytes_per_second == 1500.0
 
     def test_total_packets(self):
         flow = FlowRecord(
             key=("a", "b", 1, 2, "TCP"),
-            src_ip="a", dst_ip="b", src_port=1, dst_port=2, protocol="TCP",
-            fwd_packets=10, bwd_packets=5,
+            src_ip="a",
+            dst_ip="b",
+            src_port=1,
+            dst_port=2,
+            protocol="TCP",
+            fwd_packets=10,
+            bwd_packets=5,
         )
         assert flow.total_packets == 15

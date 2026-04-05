@@ -49,14 +49,11 @@ Usage
 
 from __future__ import annotations
 
-import hashlib
 import logging
-import math
 import time
-from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -258,13 +255,11 @@ def extract_flows_from_pcap(
     pd.DataFrame with PCAP_FLOW_FEATURES columns + optional 'label'.
     """
     try:
-        from scapy.utils import PcapReader
         from scapy.layers.inet import IP, TCP, UDP
         from scapy.layers.inet6 import IPv6
+        from scapy.utils import PcapReader
     except ImportError as exc:
-        raise ImportError(
-            "scapy is required for PCAP parsing. Install with: pip install scapy"
-        ) from exc
+        raise ImportError("scapy is required for PCAP parsing. Install with: pip install scapy") from exc
 
     pcap_path = Path(pcap_path)
     if not pcap_path.exists():
@@ -283,10 +278,7 @@ def extract_flows_from_pcap(
         return f"{dst_ip}:{dst_port}-{src_ip}:{src_port}/{proto}"
 
     def _flush_expired(current_ts: float):
-        expired = [
-            k for k, f in flows.items()
-            if (current_ts - f.last_time) > flow_timeout_sec
-        ]
+        expired = [k for k, f in flows.items() if (current_ts - f.last_time) > flow_timeout_sec]
         for k in expired:
             completed_flows.append(flows.pop(k).to_record(label))
 
@@ -308,10 +300,8 @@ def extract_flows_from_pcap(
                 ip_layer = None
                 if pkt.haslayer(IP):
                     ip_layer = pkt[IP]
-                    proto_num = ip_layer.proto
                 elif pkt.haslayer(IPv6):
                     ip_layer = pkt[IPv6]
-                    proto_num = ip_layer.nh
                 else:
                     continue
 
@@ -529,9 +519,7 @@ def _normalise_cicflowmeter(df: pd.DataFrame, label_col: str) -> pd.DataFrame:
     # Labels
     if label_col in df.columns:
         raw_labels = df[label_col].astype(str).str.strip().str.lower()
-        out["label"] = raw_labels.map(
-            lambda x: _CICFLOWMETER_LABEL_MAP.get(x, "DataExfil")
-        )
+        out["label"] = raw_labels.map(lambda x: _CICFLOWMETER_LABEL_MAP.get(x, "DataExfil"))
 
     # Drop Inf/NaN
     out.replace([np.inf, -np.inf], np.nan, inplace=True)

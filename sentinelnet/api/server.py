@@ -22,8 +22,7 @@ import asyncio
 import json
 import logging
 import os
-import threading
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 from fastapi import (
     Depends,
@@ -33,10 +32,8 @@ from fastapi import (
     Request,
     WebSocket,
     WebSocketDisconnect,
-    status,
 )
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -77,9 +74,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["Cache-Control"] = "no-store"
         # Only add HSTS on HTTPS (avoids breaking HTTP dev servers)
         if request.url.scheme == "https":
-            response.headers["Strict-Transport-Security"] = (
-                "max-age=63072000; includeSubDomains; preload"
-            )
+            response.headers["Strict-Transport-Security"] = "max-age=63072000; includeSubDomains; preload"
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
             "script-src 'self'; "
@@ -260,8 +255,9 @@ def create_app(engine_ref) -> FastAPI:
         Manually block an IP address.
         **Requires admin privileges.**
         """
-        from ..core.event_bus import Severity, ThreatEvent
         import uuid
+
+        from ..core.event_bus import Severity, ThreatEvent
 
         event = ThreatEvent(
             event_id=str(uuid.uuid4()),
@@ -290,6 +286,7 @@ def create_app(engine_ref) -> FastAPI:
         """
         for r in engine_ref.response_manager._responders:
             from ..responders.response_manager import IPBlocker
+
             if isinstance(r, IPBlocker):
                 r.unblock(ip)
                 logger.info("Unblock issued by '%s' for IP %s", _user.username, ip)
@@ -322,8 +319,9 @@ def create_app(engine_ref) -> FastAPI:
         - Query param: `?token=<jwt>`
         - Query param: `?api_key=<key>`
         """
-        from .auth import VALID_API_KEYS, decode_access_token
         import secrets
+
+        from .auth import VALID_API_KEYS, decode_access_token
 
         # Auth check before accepting
         authenticated = False
@@ -335,6 +333,7 @@ def create_app(engine_ref) -> FastAPI:
                 pass
         if not authenticated and api_key and VALID_API_KEYS:
             import hashlib
+
             for vk in VALID_API_KEYS:
                 if secrets.compare_digest(
                     hashlib.sha256(api_key.encode()).digest(),
@@ -359,9 +358,7 @@ def create_app(engine_ref) -> FastAPI:
         try:
             loop = asyncio.get_event_loop()
             if loop.is_running():
-                asyncio.run_coroutine_threadsafe(
-                    manager.broadcast(json.dumps(event.to_dict())), loop
-                )
+                asyncio.run_coroutine_threadsafe(manager.broadcast(json.dumps(event.to_dict())), loop)
         except Exception as e:
             logger.debug("WebSocket broadcast error: %s", e)
 

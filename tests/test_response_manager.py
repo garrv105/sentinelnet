@@ -1,20 +1,20 @@
 """
 Tests: ResponseManager, IncidentLogger, IPBlocker
 """
+
 import json
 import os
-import time
 import tempfile
+import time
 import uuid
+
 import pytest
-from sentinelnet.core.event_bus import EventBus, ThreatEvent, Severity
-from sentinelnet.responders.response_manager import (
-    ResponseManager, IncidentLogger, IPBlocker, BaseResponder
-)
+
+from sentinelnet.core.event_bus import EventBus, Severity, ThreatEvent
+from sentinelnet.responders.response_manager import BaseResponder, IncidentLogger, IPBlocker, ResponseManager
 
 
-def make_event(severity=Severity.HIGH, threat_type="port_scan",
-               src="10.0.0.1", score=0.9) -> ThreatEvent:
+def make_event(severity=Severity.HIGH, threat_type="port_scan", src="10.0.0.1", score=0.9) -> ThreatEvent:
     return ThreatEvent(
         event_id=str(uuid.uuid4()),
         source="test",
@@ -148,7 +148,7 @@ class TestResponseManager:
                 "enable_ip_blocker": True,
                 "dry_run": True,
                 "ip_whitelist": ["127.0.0.1"],
-            }
+            },
         )
 
     def teardown_method(self):
@@ -164,6 +164,7 @@ class TestResponseManager:
         class DummyResponder(BaseResponder):
             name = "dummy"
             calls = []
+
             def respond(self, e):
                 self.calls.append(e)
 

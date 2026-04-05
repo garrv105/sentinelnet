@@ -11,14 +11,14 @@ import logging
 import queue
 import threading
 import time
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
 
-from .packet_capture import PacketCaptureEngine
-from .flow_tracker import FlowTracker
-from .event_bus import EventBus
-from ..detectors.rule_engine import RuleEngine
 from ..detectors.anomaly_detector import AnomalyDetectionEngine
+from ..detectors.rule_engine import RuleEngine
 from ..responders.response_manager import ResponseManager
+from .event_bus import EventBus
+from .flow_tracker import FlowTracker
+from .packet_capture import PacketCaptureEngine
 
 logger = logging.getLogger(__name__)
 
@@ -157,7 +157,7 @@ class SentinelEngine:
             try:
                 pkt = pkt_queue.get(timeout=1.0)
                 # Update flow table
-                flow = self.flow_tracker.update(pkt)
+                self.flow_tracker.update(pkt)
                 # Rule-based detection on packet
                 self.rule_engine.inspect_packet(pkt)
             except queue.Empty:
@@ -184,7 +184,9 @@ class SentinelEngine:
         """Start the FastAPI server in a background thread."""
         try:
             import uvicorn
+
             from ..api.server import create_app
+
             app = create_app(self)
 
             def run():
