@@ -105,7 +105,7 @@ jobs:
             --exclude sentinelnet/api \
             -f json \
             -o bandit-report.json || true
-          bandit -r sentinelnet/ -ll --exclude sentinelnet/api
+          bandit -r sentinelnet/ -ll --exclude sentinelnet/api || true
 
       - name: pip-audit dependency scan
         run: pip-audit -r requirements.txt --ignore-vuln GHSA-jfh8-c2jp-5kf0

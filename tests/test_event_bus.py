@@ -117,9 +117,15 @@ class TestEventBus:
     def test_queue_full_drops_gracefully(self):
         bus = EventBus(workers=1, max_queue=2)
         received = []
-        bus.subscribe("*", lambda e: (time.sleep(0.5), received.append(e)))
+
+        def slow_handler(e):
+            time.sleep(0.05)
+            received.append(e)
+
+        bus.subscribe("*", slow_handler)
         for _ in range(10):
             bus.publish(make_event())
+        time.sleep(0.5)  # let some events process
         stats = bus.get_stats()
         assert stats["dropped"] >= 0  # Should not crash
         bus.shutdown()
