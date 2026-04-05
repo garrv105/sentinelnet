@@ -1,0 +1,37 @@
+version: "3.9"
+
+services:
+  sentinelnet:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: sentinelnet:latest
+    container_name: sentinelnet
+    restart: unless-stopped
+    network_mode: host          # Required for raw packet capture
+    cap_add:
+      - NET_ADMIN               # Required for iptables
+      - NET_RAW                 # Required for packet capture
+    volumes:
+      - ../logs:/app/logs
+      - ../models:/app/models
+      - ../config:/app/config
+    environment:
+      - SENTINELNET_LOG_LEVEL=INFO
+    command: ["--config", "config/sentinelnet.yaml", "--api"]
+    ports:
+      - "8000:8000"
+
+  # Optional: Grafana for dashboard visualization
+  grafana:
+    image: grafana/grafana:latest
+    container_name: sentinelnet-grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=sentinelnet
+
+volumes:
+  grafana-data:

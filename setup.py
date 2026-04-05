@@ -1,0 +1,56 @@
+from setuptools import setup, find_packages
+
+setup(
+    name="sentinelnet",
+    version="1.0.0",
+    description="Adaptive Threat Detection & Automated Response Toolkit",
+    long_description=open("README.md").read(),
+    long_description_content_type="text/markdown",
+    author="Security Research Team",
+    license="MIT",
+    packages=find_packages(exclude=["tests*", "scripts*", "docker*", "docs*"]),
+    python_requires=">=3.10",
+    install_requires=[
+        "scapy>=2.5.0",
+        "fastapi>=0.110.0",
+        "uvicorn[standard]>=0.27.0",
+        "pydantic>=2.0.0",
+        "scikit-learn>=1.4.0",
+        "numpy>=1.26.0",
+        "requests>=2.31.0",
+        "pyyaml>=6.0.1",
+        "click>=8.1.7",
+        "rich>=13.0.0",
+        "python-jose[cryptography]>=3.3.0",
+        "passlib[bcrypt]>=1.7.4",
+        "slowapi>=0.1.9",
+    ],
+    extras_require={
+        "dev": [
+            "pytest>=7.4.0",
+            "pytest-cov>=4.1.0",
+            "pytest-asyncio>=0.23.0",
+            "httpx>=0.27.0",
+            "ruff>=0.3.0",
+            "black>=24.0.0",
+            "isort>=5.13.0",
+            "bandit>=1.7.7",
+            "pip-audit>=2.7.0",
+        ],
+    },
+    entry_points={
+        "console_scripts": [
+            "sentinelnet=sentinelnet.__main__:main",
+        ],
+    },
+    classifiers=[
+        "Development Status :: 4 - Beta",
+        "Environment :: Console",
+        "Intended Audience :: Information Technology",
+        "License :: OSI Approved :: MIT License",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
+        "Topic :: Security",
+    ],
+)
